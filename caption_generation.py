@@ -3,6 +3,11 @@ import tensorflow as tf
 from tensorflow.keras.layers import Dense,GlobalAveragePooling2D, Input, Embedding,Concatenate,BatchNormalization, Dropout, Add, GRU, AveragePooling2D
 import numpy as np
 import cv2
+import os
+import numpy as np
+import pandas as pd
+from PIL import Image
+
 
 chexnet_weights = "densenet.h5"
 
@@ -203,3 +208,18 @@ def predict_captions(image,model_tokenizer = None):
 
   return predicted_caption
 
+if __name__ == "__main__":
+    model_tokenizer = create_model()
+
+    IMAGES_DIR = "NLMCXR_png" 
+    captions = []
+
+    for image in os.listdir(IMAGES_DIR):
+        print(image)
+        image = Image.open(f"{IMAGES_DIR}/{image}").convert("RGB")
+        image = np.array(image)/255
+        caption = predict_captions([image], model_tokenizer)
+        print(caption)
+        captions.append(tuple([image, caption[0]]))
+    captions = pd.DataFrame(captions)
+    captions.to_csv("captions.csv")
