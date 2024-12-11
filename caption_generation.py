@@ -35,10 +35,10 @@ class encoder_block(tf.keras.layers.Layer):
     return op
 
 
-def encoder(image1,dense_dim,dropout_rate):
+def encoder(image,dense_dim,dropout_rate):
 
   image_encoder = encoder_block(name="image_encoder")
-  encoder_features = image_encoder(image1) 
+  encoder_features = image_encoder(image) 
   dense = Dense(dense_dim,name = "encoder_dense",activation = "relu") 
   dense_features = dense(encoder_features)
 
@@ -149,13 +149,13 @@ def create_model():
 
 
   tf.keras.backend.clear_session()
-  image1 = Input(shape = (input_size + (3,))) 
+  image = Input(shape = (input_size + (3,))) 
   caption = Input(shape = (max_pad,))
 
-  encoder_output = encoder(image1,dense_dim,dropout_rate) 
+  encoder_output = encoder(image,dense_dim,dropout_rate) 
 
   output = decoder(max_pad, embedding_dim,dense_dim,batch_size ,vocab_size)(encoder_output,caption)
-  model = tf.keras.Model(inputs = [image1,caption], outputs = output)
+  model = tf.keras.Model(inputs = [image,caption], outputs = output)
   model_filename = 'Encoder_Decoder_global_attention.h5'
   model_save = model_filename
   model.load_weights(model_save)
@@ -163,13 +163,13 @@ def create_model():
   return model,tokenizer
 
 
-def greedy_search_predict(image1,model,tokenizer,input_size = (224,224)):
+def greedy_search_predict(image,model,tokenizer,input_size = (224,224)):
 
-  image1 = tf.expand_dims(cv2.resize(image1,input_size,interpolation = cv2.INTER_NEAREST),axis=0) 
-  image1 = model.get_layer('encoder_block')(image1)
-  image1 = model.get_layer('encoder_dense')(image1)
+  image = tf.expand_dims(cv2.resize(image,input_size,interpolation = cv2.INTER_NEAREST),axis=0) 
+  image = model.get_layer('encoder_block')(image)
+  image = model.get_layer('encoder_dense')(image)
 
-  enc_op = model.get_layer('encoder_batch_norm')(image1)  
+  enc_op = model.get_layer('encoder_batch_norm')(image)  
   enc_op = model.get_layer('encoder_dropout')(enc_op)
 
 
@@ -185,29 +185,21 @@ def greedy_search_predict(image1,model,tokenizer,input_size = (224,224)):
     max_prob = tf.argmax(output,axis=-1)  
     caption = np.array([max_prob]) 
     if max_prob==np.squeeze(tokenizer.texts_to_sequences(['<end>'])): 
-      break;
+      break
     else:
       a.append(tf.squeeze(max_prob).numpy())
   return tokenizer.sequences_to_texts([a])[0] 
 
 
-def predict1(image1,model_tokenizer = None):
+def predict_captions(image,model_tokenizer = None):
   if model_tokenizer == None:
     model,tokenizer = create_model()
   else:
     model,tokenizer = model_tokenizer[0],model_tokenizer[1]
-  predicted_caption = greedy_search_predict(image1,model,tokenizer)
-
-  return predicted_caption
-
-
-
-def function1(image1,model_tokenizer = None):
-  if model_tokenizer is None:
-    model_tokenizer = list(create_model())
   predicted_caption = []
-  for i1 in image1:
-    caption = predict1(i1,model_tokenizer)
+  for img in image:
+    caption = greedy_search_predict(img,model,tokenizer)
     predicted_caption.append(caption)
 
   return predicted_caption
+
