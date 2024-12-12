@@ -55,9 +55,6 @@ def encoder(image,dense_dim,dropout_rate):
 
 
 class global_attention(tf.keras.layers.Layer):
-  """
-  calculate global attention
-  """
   def __init__(self,dense_dim):
     super().__init__()
 
@@ -80,9 +77,6 @@ class global_attention(tf.keras.layers.Layer):
 
 
 class decoder_block(tf.keras.layers.Layer):
-  """
-  decodes a single token
-  """
   def __init__(self,vocab_size, embedding_dim, max_pad, dense_dim ,name = "token_decoder"):
     super().__init__()
     self.dense_dim = dense_dim
